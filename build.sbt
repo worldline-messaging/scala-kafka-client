@@ -31,6 +31,8 @@ lazy val commonSettings = Seq(
   //      credentials := List(Path.userHome / ".bintray" / ".artifactory").filter(_.exists).map(Credentials(_))
   //    )
   //  else
+  publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/worldline-messaging/akka-persistence-kafka"),
+  credentials += Credentials (Path.userHome / ".ivy2" / ".github_credentials"),
 
   parallelExecution in Test := false,
   parallelExecution in IntegrationTest := true,
