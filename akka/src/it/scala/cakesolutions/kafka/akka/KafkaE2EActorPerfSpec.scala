@@ -8,8 +8,10 @@ import cakesolutions.kafka.{KafkaConsumer, KafkaProducer, KafkaProducerRecord}
 import com.typesafe.config.ConfigFactory
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.flatspec.AnyFlatSpecLike
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Promise
@@ -22,7 +24,7 @@ import scala.util.Random
 class KafkaE2EActorPerfSpec(system_ : ActorSystem)
   extends TestKit(system_)
     with ImplicitSender
-    with FlatSpecLike
+    with AnyFlatSpecLike
     with Matchers
     with BeforeAndAfterAll
     with ScalaFutures {
@@ -55,39 +57,43 @@ class KafkaE2EActorPerfSpec(system_ : ActorSystem)
 
   val producerConf = KafkaProducer.Conf(config.getConfig("producer"), new StringSerializer, new StringSerializer)
 
+  val enabled = false
+
   "KafkaConsumerActor to KafkaProducer with async commit" should "perform" in {
-    val sourceTopic = randomString
-    val targetTopic = randomString
-    val totalMessages = 100000
+    if (enabled) {
+      val sourceTopic = randomString
+      val targetTopic = randomString
+      val totalMessages = 100000
 
-    //For loading the source topic with test data
-    val testProducer = KafkaProducer[String, String](producerConf)
+      //For loading the source topic with test data
+      val testProducer = KafkaProducer[String, String](producerConf)
 
-    val producer = system.actorOf(KafkaProducerActor.props(producerConf))
+      val producer = system.actorOf(KafkaProducerActor.props(producerConf))
 
-    val pilot = new PipelinePilot(producer, targetTopic, totalMessages)
-    val receiver = TestProbe()
-    receiver.setAutoPilot(pilot)
+      val pilot = new PipelinePilot(producer, targetTopic, totalMessages)
+      val receiver = TestProbe()
+      receiver.setAutoPilot(pilot)
 
-    val consumer = KafkaConsumerActor(consumerConf, consumerActorConf, receiver.ref)
+      val consumer = KafkaConsumerActor(consumerConf, consumerActorConf, receiver.ref)
 
-    1 to totalMessages foreach { _ =>
-      testProducer.send(KafkaProducerRecord(sourceTopic, None, msg1k))
-    }
-    testProducer.flush()
-    log.info("Delivered {} messages to topic {}", totalMessages, sourceTopic)
+      1 to totalMessages foreach { _ =>
+        testProducer.send(KafkaProducerRecord(sourceTopic, None, msg1k))
+      }
+      testProducer.flush()
+      log.info("Delivered {} messages to topic {}", totalMessages, sourceTopic)
 
-    consumer.subscribe(Subscribe.AutoPartition(Seq(sourceTopic)))
+      consumer.subscribe(Subscribe.AutoPartition(Seq(sourceTopic)))
 
-    whenReady(pilot.future) { case (totalTime, messagesPerSec) =>
-      log.info("Total Time millis : {}", totalTime)
-      log.info("Messages per sec  : {}", messagesPerSec)
+      whenReady(pilot.future) { case (totalTime, messagesPerSec) =>
+        log.info("Total Time millis : {}", totalTime)
+        log.info("Messages per sec  : {}", messagesPerSec)
 
-      totalTime should be < 7000L
+        totalTime should be < 7000L
 
-      consumer.unsubscribe()
-      testProducer.close()
-      log.info("Done")
+        consumer.unsubscribe()
+        testProducer.close()
+        log.info("Done")
+      }
     }
   }
 }

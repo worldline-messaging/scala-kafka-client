@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.{ConsumerRecords, OffsetResetStrategy}
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.util.Random
 
@@ -36,7 +37,8 @@ class ConsumerProducerIntSpec extends KafkaIntSpec {
   val producerFromDirectConfig: KafkaProducer.Conf[String, String] =
     KafkaProducer.Conf(new StringSerializer(),
       new StringSerializer(),
-      bootstrapServers = s"localhost:$kafkaPort")
+      bootstrapServers = s"localhost:$kafkaPort",
+      acks = "1")
 
   val consumerFromDirectConfig: KafkaConsumer.Conf[String, String] =
     KafkaConsumer.Conf(new StringDeserializer(),
@@ -61,14 +63,16 @@ class ConsumerProducerIntSpec extends KafkaIntSpec {
     val consumer = KafkaConsumer(consumerFromDirectConfig)
     consumer.subscribe(List(topic).asJava)
 
-    val records1 = consumer.poll(1000)
+    val records1 = consumer.poll(Duration.ofMillis(5000)) // Joining the group is done with poll.
+                                                          // 5000 ms is the time for the consumer
+                                                          // to officially join the group.
     records1.count() shouldEqual 0
 
     log.info("Kafka producer connecting on port: [{}]", kafkaPort)
     producer.send(KafkaProducerRecord(topic, Some("key"), "value"))
     producer.flush()
 
-    val records2: ConsumerRecords[String, String] = consumer.poll(1000)
+    val records2: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(1000))
     records2.count() shouldEqual 1
 
     producer.close()
@@ -88,7 +92,7 @@ class ConsumerProducerIntSpec extends KafkaIntSpec {
 
     consumer.subscribe(List(topic).asJava)
 
-    val records2: ConsumerRecords[String, String] = consumer.poll(5000)
+    val records2: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(5000))
     records2.count() shouldEqual 1
 
     producer.close()
@@ -108,7 +112,7 @@ class ConsumerProducerIntSpec extends KafkaIntSpec {
       consumer.subscribe(List(topic).asJava)
 
       val count = (1 to 30).map { _ =>
-        consumer.poll(1000).count
+        consumer.poll(Duration.ofMillis(1000)).count
       }.sum
       consumer.close()
       count

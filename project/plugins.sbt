@@ -2,8 +2,6 @@ logLevel := Level.Warn
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
-addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.4")
-
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.10")
 
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.1")

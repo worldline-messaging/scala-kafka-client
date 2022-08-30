@@ -9,8 +9,10 @@ import com.typesafe.config.ConfigFactory
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.flatspec.AnyFlatSpecLike
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Promise
@@ -23,7 +25,7 @@ import scala.util.Random
 class KafkaConsumerActorPerfSpec(system_ : ActorSystem)
   extends TestKit(system_)
     with ImplicitSender
-    with FlatSpecLike
+    with AnyFlatSpecLike
     with Matchers
     with BeforeAndAfterAll
     with ScalaFutures {
@@ -54,35 +56,39 @@ class KafkaConsumerActorPerfSpec(system_ : ActorSystem)
 
   private def randomString: String = Random.alphanumeric.take(5).mkString("")
 
+  val enabled = false
+
   "KafkaConsumerActor with single partition topic" should "perform" in {
-    val topic = randomString
-    val totalMessages = 100000
+    if (enabled) {
+      val topic = randomString
+      val totalMessages = 100000
 
-    val producerConf = KafkaProducer.Conf(config.getConfig("producer"), new StringSerializer, new StringSerializer)
-    val producer = KafkaProducer[String, String](producerConf)
-    val pilot = new ReceiverPilot(totalMessages)
-    val receiver = TestProbe()
-    receiver.setAutoPilot(pilot)
+      val producerConf = KafkaProducer.Conf(config.getConfig("producer"), new StringSerializer, new StringSerializer)
+      val producer = KafkaProducer[String, String](producerConf)
+      val pilot = new ReceiverPilot(totalMessages)
+      val receiver = TestProbe()
+      receiver.setAutoPilot(pilot)
 
-    val consumer = KafkaConsumerActor(consumerConf, actorConf, receiver.ref)
+      val consumer = KafkaConsumerActor(consumerConf, actorConf, receiver.ref)
 
-    1 to totalMessages foreach { n =>
-      producer.send(KafkaProducerRecord(topic, None, msg1k))
-    }
-    producer.flush()
-    log.info("Delivered {} messages to topic {}", totalMessages, topic)
+      1 to totalMessages foreach { n =>
+        producer.send(KafkaProducerRecord(topic, None, msg1k))
+      }
+      producer.flush()
+      log.info("Delivered {} messages to topic {}", totalMessages, topic)
 
-    consumer.subscribe(Subscribe.AutoPartition(Seq(topic)))
+      consumer.subscribe(Subscribe.AutoPartition(Seq(topic)))
 
-    whenReady(pilot.future) { case (totalTime, messagesPerSec) =>
-      log.info("Total Time millis : {}", totalTime)
-      log.info("Messages per sec  : {}", messagesPerSec)
+      whenReady(pilot.future) { case (totalTime, messagesPerSec) =>
+        log.info("Total Time millis : {}", totalTime)
+        log.info("Messages per sec  : {}", messagesPerSec)
 
-      totalTime should be < 7000L
+        totalTime should be < 7000L
 
-      consumer.unsubscribe()
-      producer.close()
-      log.info("Done")
+        consumer.unsubscribe()
+        producer.close()
+        log.info("Done")
+      }
     }
   }
 }
