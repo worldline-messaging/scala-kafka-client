@@ -2,14 +2,14 @@ package cakesolutions.kafka.testkit
 
 import java.io.File
 import java.net.ServerSocket
-
-import kafka.server.{KafkaConfig, KafkaServerStartable}
+import kafka.server.KafkaConfig
 import org.apache.curator.test.TestingServer
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetResetStrategy}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Random, Try}
@@ -62,6 +62,7 @@ object KafkaServer {
       "port" -> port.toString,
       "zookeeper.connect" -> ("localhost:" + zookeeperPort.toString),
       "log.dir" -> logDir.getAbsolutePath,
+      "offsets.topic.num.partitions" -> "5",
       "offsets.topic.replication.factor" -> "1",
       "transaction.state.log.replication.factor" -> "1",
       "transaction.state.log.min.isr" -> "1",
@@ -110,7 +111,7 @@ final class KafkaServer(
   private val config = createConfig(kafkaPort, zookeeperPort, logDir = logDir, kafkaConfig)
 
   // Kafka Test Server
-  private val kafkaServer = new KafkaServerStartable(config)
+  private val kafkaServer = new kafka.server.KafkaServer(config)
 
   def startup(): Unit = {
     log.info("ZK Connect String: {}", zkServer.getConnectString)
@@ -160,7 +161,7 @@ final class KafkaServer(
       val start = System.currentTimeMillis()
 
       while (total < expectedNumOfRecords && System.currentTimeMillis() < start + timeout) {
-        val records = consumer.poll(100)
+        val records = consumer.poll(Duration.ofMillis(100))
         val kvs = records.asScala.map(r => (Option(r.key()), r.value()))
         collected ++= kvs
         total += records.count()

@@ -6,6 +6,7 @@ import org.scalatest.concurrent.Waiters.Waiter
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Random, Success}
 
@@ -40,14 +41,16 @@ class KafkaConsumerSpec extends KafkaIntSpec {
     val consumer = KafkaConsumer(consumerConfig)
     consumer.subscribe(List(topic).asJava)
 
-    val records1 = consumer.poll(1000)
+    val records1 = consumer.poll(Duration.ofMillis(5000)) // Joining the group is done with poll.
+                                                          // 5000 ms is the time for the consumer
+                                                          // to officially join the group.
     records1.count() shouldEqual 0
 
     log.info("Kafka producer connecting on port: [{}]", kafkaPort)
     producer.send(KafkaProducerRecord(topic, Some("key"), "value"))
     producer.flush()
 
-    val records2: ConsumerRecords[String, String] = consumer.poll(1000)
+    val records2: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(1000))
     records2.count() shouldEqual 1
 
     producer.close()
@@ -59,7 +62,7 @@ class KafkaConsumerSpec extends KafkaIntSpec {
     val topic = randomString
     log.info(s"Using topic [$topic] and kafka port [$kafkaPort]")
 
-    val badSerializer = (msg: String) => {
+    val badSerializer = (_: String) => {
       throw new Exception("Serialization failed")
     }
 

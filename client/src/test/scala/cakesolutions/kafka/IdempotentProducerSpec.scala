@@ -2,10 +2,11 @@ package cakesolutions.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.common.KafkaException
-import org.apache.kafka.common.requests.IsolationLevel
+import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.util.Random
 
@@ -51,14 +52,16 @@ class IdempotentProducerSpec extends KafkaIntSpec {
 
     consumer.subscribe(List(topic).asJava)
 
-    val records1 = consumer.poll(1000)
+    val records1 = consumer.poll(Duration.ofMillis(5000)) // Joining the group is done with poll.
+                                                          // 5000 ms is the time for the consumer
+                                                          // to officially join the group.
     records1.count() shouldEqual 0
 
     log.info("Kafka producer connecting on port: [{}]", kafkaPort)
     producer.send(KafkaProducerRecord(topic, Some("key"), "value"))
     producer.flush()
 
-    val records2: ConsumerRecords[String, String] = consumer.poll(1000)
+    val records2: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(1000))
     records2.count() shouldEqual 1
 
     producer.close()
@@ -74,7 +77,9 @@ class IdempotentProducerSpec extends KafkaIntSpec {
 
     consumer.subscribe(List(topic).asJava)
 
-    val records1 = consumer.poll(1000)
+    val records1 = consumer.poll(Duration.ofMillis(5000)) // Joining the group is done with poll.
+                                                          // 5000 ms is the time for the consumer
+                                                          // to officially join the group.
     records1.count() shouldEqual 0
 
     log.info("Kafka producer connecting on port: [{}]", kafkaPort)
@@ -91,7 +96,7 @@ class IdempotentProducerSpec extends KafkaIntSpec {
         producer.abortTransaction()
     }
 
-    val records2: ConsumerRecords[String, String] = consumer.poll(1000)
+    val records2: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(1000))
     records2.count() shouldEqual 1
 
     producer.close()

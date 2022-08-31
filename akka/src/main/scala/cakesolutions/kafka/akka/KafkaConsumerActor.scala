@@ -828,9 +828,9 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
       trackPartitions = new TrackPartitionsCommitMode(consumer, context.self, assignedListener, revokedListener)
       consumer.subscribe(topics.toList.asJava, trackPartitions)
 
-    case Subscribe.AutoPartitionBasic(topics, assignedListener, revokedListener) =>
+    case Subscribe.AutoPartitionBasic(topics, _, revokedListener) =>
       log.info(s"Subscribing in basic auto partition assignment mode to topics [{}].", topics.mkString(","))
-      trackPartitions = new TrackPartitionsCommitModeBasic(consumer, context.self, assignedListener, revokedListener)
+      trackPartitions = new TrackPartitionsCommitModeBasic(context.self, revokedListener)
       consumer.subscribe(topics.toList.asJava, trackPartitions)
 
     case Subscribe.AutoPartitionWithManualOffset(topics, assignedListener, revokedListener) =>
@@ -886,12 +886,17 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
   private def pollKafka(state: StateData, timeout: Int): Option[Records] =
     tryWithConsumer(state) {
       log.debug("Poll Kafka for {} milliseconds", timeout)
-      val rs = consumer.poll(timeout)
+      val rs = Option(
+        consumer.poll(java.time.Duration.ofMillis(timeout))
+      )
       log.debug("Poll Complete!")
-      if (rs.count() > 0)
-        Some(ConsumerRecords(currentConsumerOffsets, rs))
-      else
-        None
+      rs.flatMap { r =>
+        if(r.count() > 0) {
+          Some(ConsumerRecords(currentConsumerOffsets, r))
+        } else {
+          None
+        }
+      }
     }
 
   private def tryWithConsumer[T](state: StateData)(effect: => Option[T]): Option[T] = {

@@ -1,7 +1,6 @@
 package cakesolutions.kafka.akka
 
 import java.util.{Collection => JCollection}
-
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import cakesolutions.kafka.KafkaConsumer
@@ -13,16 +12,19 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.flatspec.AnyFlatSpecLike
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.util.Random
 
 
 class TrackPartionsSpec(system_ : ActorSystem) extends TestKit(system_)
-  with FlatSpecLike
+  with AnyFlatSpecLike
   with Matchers
   with BeforeAndAfterAll with MockitoSugar {
 
@@ -91,7 +93,7 @@ class TrackPartionsSpec(system_ : ActorSystem) extends TestKit(system_)
       val recMapEmpty = JConsumerRecords.empty[String, String]()
 
       doNothing().when(kConsumer).subscribe(any[JCollection[String]](), listenerCaptor.capture())
-      when(kConsumer.poll(anyLong()))
+      when(kConsumer.poll(any(classOf[Duration])))
         .thenReturn(recMap)
         .thenReturn(recMapEmpty)
       when(kConsumer.position(tp)).thenReturn(recMap.count())

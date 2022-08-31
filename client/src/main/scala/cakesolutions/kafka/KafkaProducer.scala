@@ -1,7 +1,5 @@
 package cakesolutions.kafka
 
-import java.util.concurrent.TimeUnit
-
 import cakesolutions.kafka.TypesafeConfigExtensions._
 import com.typesafe.config.Config
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
@@ -9,6 +7,7 @@ import org.apache.kafka.clients.producer.{Callback, ProducerConfig, ProducerReco
 import org.apache.kafka.common.{PartitionInfo, TopicPartition}
 import org.apache.kafka.common.serialization.Serializer
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -283,7 +282,7 @@ final class KafkaProducer[K, V](val producer: JProducer[K, V]) extends KafkaProd
     producer.close()
 
   override def close(timeout: FiniteDuration): Unit =
-    producer.close(timeout.toMillis, TimeUnit.MILLISECONDS)
+    producer.close(Duration.ofMillis(timeout.toMillis))
 
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))

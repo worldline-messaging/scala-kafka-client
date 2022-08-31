@@ -101,8 +101,7 @@ private final class TrackPartitionsCommitMode(
   * @param consumerActor Tha KafkaConsumerActor to notify of partition change events
   */
 private final class TrackPartitionsCommitModeBasic(
-  consumer: KafkaConsumer[_, _], consumerActor: ActorRef,
-  assignedListener: List[TopicPartition] => Unit,
+  consumerActor: ActorRef,
   revokedListener: List[TopicPartition] => Unit) extends TrackPartitions {
 
   private val log = LoggerFactory.getLogger(getClass)

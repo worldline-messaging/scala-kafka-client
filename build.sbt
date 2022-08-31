@@ -1,12 +1,9 @@
 lazy val commonSettings = Seq(
-  organization := "net.cakesolutions",
+  organization := "com.github.worldline-messaging",
   scalaVersion := "2.12.10",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
-  bintrayOrganization := Some("cakesolutions"),
-  bintrayPackageLabels := Seq("scala", "kafka"),
   //  resolvers += "Apache Staging" at "https://repository.apache.org/content/groups/staging/",
-  resolvers += Resolver.bintrayRepo("mockito", "maven"),
   scalacOptions in Compile ++= Seq(
     "-encoding", "UTF-8",
     "-target:jvm-1.8",
@@ -34,6 +31,8 @@ lazy val commonSettings = Seq(
   //      credentials := List(Path.userHome / ".bintray" / ".artifactory").filter(_.exists).map(Credentials(_))
   //    )
   //  else
+  publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/worldline-messaging/scala-kafka-client"),
+  credentials += Credentials (Path.userHome / ".ivy2" / ".github_credentials"),
 
   parallelExecution in Test := false,
   parallelExecution in IntegrationTest := true,
