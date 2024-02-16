@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.worldline-messaging",
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.17",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
   //  resolvers += "Apache Staging" at "https://repository.apache.org/content/groups/staging/",
