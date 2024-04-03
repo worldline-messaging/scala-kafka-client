@@ -31,8 +31,11 @@ lazy val commonSettings = Seq(
   //      credentials := List(Path.userHome / ".bintray" / ".artifactory").filter(_.exists).map(Credentials(_))
   //    )
   //  else
-  publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/worldline-messaging/scala-kafka-client"),
-  credentials += Credentials (Path.userHome / ".ivy2" / ".github_credentials"),
+  publishTo := Some("Kazan releases nexus" at "https://nexus.kazan.myworldline.com/repository/messaging-maven-releases"),
+  credentials += Credentials (Path.userHome / ".ivy2" / ".kazan_nexus_credentials"),
+
+
+
 
   parallelExecution in Test := false,
   parallelExecution in IntegrationTest := true,
