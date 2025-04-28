@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.worldline-messaging",
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.17",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
   //  resolvers += "Apache Staging" at "https://repository.apache.org/content/groups/staging/",
@@ -31,8 +31,10 @@ lazy val commonSettings = Seq(
   //      credentials := List(Path.userHome / ".bintray" / ".artifactory").filter(_.exists).map(Credentials(_))
   //    )
   //  else
-  publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/worldline-messaging/scala-kafka-client"),
-  credentials += Credentials (Path.userHome / ".ivy2" / ".github_credentials"),
+  //publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/worldline-messaging/scala-kafka-client"),
+  //credentials += Credentials (Path.userHome / ".ivy2" / ".github_credentials"),
+  publishTo := Some("Kazan releases nexus" at "https://nexus.kazan.myworldline.com/repository/messaging-maven-releases"),
+  credentials += Credentials (Path.userHome / ".ivy2" / ".kazan_nexus_credentials"),
 
   parallelExecution in Test := false,
   parallelExecution in IntegrationTest := true,
